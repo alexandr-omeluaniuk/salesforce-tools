@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import javafx.scene.image.Image;
 
 /**
  * JavaFX App
@@ -19,6 +20,8 @@ public class App extends Application {
     public void start(Stage stage) throws IOException {
         scene = new Scene(loadFXML("test-upload-file-form"));
         stage.setScene(scene);
+        stage.setTitle("Salesforce Tools (Insert or Update Blob Data)");
+        stage.getIcons().add(new Image(App.class.getResourceAsStream("/img/logo.png")));
         stage.show();
     }
 
