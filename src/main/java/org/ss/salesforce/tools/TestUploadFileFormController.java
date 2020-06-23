@@ -5,12 +5,16 @@
  */
 package org.ss.salesforce.tools;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextArea;
@@ -94,10 +98,41 @@ public class TestUploadFileFormController implements Initializable {
         fos.write(jsonEnd.getBytes("UTF-8"));
         log(jsonEnd);
         fos.close();
+        request(endpointText, tokenText);
     }
     
     private void log(String message) {
-        logOutput.setText(logOutput.getText() + "\n" + message);
+        Platform.runLater(() -> {
+            logOutput.setText(logOutput.getText() + "\n" + message);
+        });
+    }
+    
+    private void request(String endpoint, String token) {
+        try {
+            log(">>> HTTP request start");
+            URL url = new URL(endpoint);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=\"boundary_string\"");
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.getOutputStream().write(Files.readAllBytes(new File("multipart.json").toPath()));
+            int responseCode = conn.getResponseCode();
+            log("> response code [" + responseCode + "]");
+            InputStream is = responseCode == 200 ? conn.getInputStream() : conn.getErrorStream();
+            int len;
+            byte[] buff = new byte[1024 * 10];
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            while ((len = is.read(buff)) != -1) {
+                baos.write(buff, 0, len);
+            }
+            log("> Salesforce response:");
+            log(new String(baos.toByteArray(), "UTF-8"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            log("Request error: " + e.getMessage());
+        }
     }
     
 }
